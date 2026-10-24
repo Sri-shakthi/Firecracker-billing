@@ -27,6 +27,7 @@ function openDatabase(file) {
       subtotal REAL NOT NULL,
       tax REAL NOT NULL,
       discount REAL NOT NULL DEFAULT 0,
+      discount_percent REAL NOT NULL DEFAULT 0,
       total REAL NOT NULL,
       payment_method TEXT NOT NULL,
       status TEXT NOT NULL DEFAULT 'completed'
@@ -50,11 +51,13 @@ function openDatabase(file) {
   `);
   const productColumns = db.prepare('PRAGMA table_info(products)').all().map(column => column.name);
   if (!productColumns.includes('unit')) db.exec("ALTER TABLE products ADD COLUMN unit TEXT NOT NULL DEFAULT ''");
+  const billColumns = db.prepare('PRAGMA table_info(bills)').all().map(column => column.name);
+  if (!billColumns.includes('discount_percent')) db.exec("ALTER TABLE bills ADD COLUMN discount_percent REAL NOT NULL DEFAULT 0");
 
   const nextBillNumber = (id) => `FC-${new Date().getFullYear()}-${String(id).padStart(6, '0')}`;
   const saveBill = db.transaction((bill) => {
-    const result = db.prepare(`INSERT INTO bills (bill_number, subtotal, tax, discount, total, payment_method)
-      VALUES (NULL, ?, ?, ?, ?, ?)`).run(bill.subtotal, bill.tax, bill.discount, bill.total, bill.paymentMethod);
+    const result = db.prepare(`INSERT INTO bills (bill_number, subtotal, tax, discount, discount_percent, total, payment_method)
+      VALUES (NULL, ?, ?, ?, ?, ?, ?)`).run(bill.subtotal, bill.tax, bill.discount, bill.discountPercent, bill.total, bill.paymentMethod);
     const id = Number(result.lastInsertRowid);
     const billNumber = nextBillNumber(id);
     db.prepare('UPDATE bills SET bill_number = ? WHERE id = ?').run(billNumber, id);

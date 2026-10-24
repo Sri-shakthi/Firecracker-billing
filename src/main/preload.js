@@ -15,5 +15,6 @@ contextBridge.exposeInMainWorld('pos', {
   savePrinter: name => ipcRenderer.invoke('printer:save', name),
   getSettings: () => ipcRenderer.invoke('settings:get'),
   saveStoreSettings: settings => ipcRenderer.invoke('settings:save-store', settings),
+  saveDefaultDiscount: value => ipcRenderer.invoke('settings:save-discount', value),
   getLicense: () => ipcRenderer.invoke('license:get')
 });

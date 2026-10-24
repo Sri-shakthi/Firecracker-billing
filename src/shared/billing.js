@@ -13,13 +13,14 @@ function calculateLine(item) {
   return { ...item, gstRate: 0, quantity, unitPrice, discount: discountAmount, gross, taxable, tax, total: taxable };
 }
 
-function calculateBill(items, billDiscount = 0) {
+function calculateBill(items, discountPercent = 0) {
   const lines = items.map(calculateLine);
   const subtotal = money(lines.reduce((sum, line) => sum + line.taxable, 0));
   const tax = 0;
-  const discount = money(Math.min(subtotal + tax, Math.max(0, Number(billDiscount) || 0)));
+  const normalizedDiscountPercent = Math.min(100, Math.max(0, Number(discountPercent) || 0));
+  const discount = money((subtotal + tax) * normalizedDiscountPercent / 100);
   const total = money(subtotal + tax - discount);
-  return { lines, subtotal, tax, discount, total, itemCount: lines.reduce((sum, line) => sum + line.quantity, 0) };
+  return { lines, subtotal, tax, discount, discountPercent: normalizedDiscountPercent, total, itemCount: lines.reduce((sum, line) => sum + line.quantity, 0) };
 }
 
 if (typeof module !== 'undefined') module.exports = { money, calculateLine, calculateBill };

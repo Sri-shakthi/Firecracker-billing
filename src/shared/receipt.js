@@ -18,6 +18,7 @@
   }
 
   function markup(bill, settings = {}) {
+    const discountPercent = Number(bill.discount_percent ?? bill.discountPercent) || (Number(bill.subtotal) ? Number(bill.discount) / Number(bill.subtotal) * 100 : 0);
     const items = bill.items.map(item => `
       <section class="receipt-item">
         <div class="receipt-item-name">${escapeHtml(item.name)}</div>
@@ -45,7 +46,7 @@
       <div class="receipt-rule"></div>
       <div class="receipt-summary">
         <p><span>Subtotal</span><b>Rs. ${money(bill.subtotal)}</b></p>
-        ${Number(bill.discount) ? `<p><span>Discount</span><b>- Rs. ${money(bill.discount)}</b></p>` : ''}
+        ${Number(bill.discount) ? `<p><span>Discount (${money(discountPercent).replace(/\.00$/, '')}%)</span><b>- Rs. ${money(bill.discount)}</b></p>` : ''}
         <p class="receipt-total"><span>TOTAL</span><b>Rs. ${money(bill.total)}</b></p>
       </div>
       <div class="receipt-rule"></div>

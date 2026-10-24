@@ -39,7 +39,7 @@ function registerHandlers() {
   ipcMain.handle('dashboard:get', (_, filters) => store.dashboard(filters));
   ipcMain.handle('printer:list', async () => mainWindow.webContents.getPrintersAsync());
   ipcMain.handle('printer:save', (_, name) => store.setSetting('printerName', name));
-  ipcMain.handle('settings:get', () => ({ printerName: store.getSetting('printerName') || '', storeName: store.getSetting('storeName') || '', storePhone: store.getSetting('storePhone') || '' }));
+  ipcMain.handle('settings:get', () => ({ printerName: store.getSetting('printerName') || '', storeName: store.getSetting('storeName') || '', storePhone: store.getSetting('storePhone') || '', defaultDiscountPercent: Number(store.getSetting('defaultDiscountPercent') ?? 50) }));
   ipcMain.handle('settings:save-store', (_, settings) => {
     const storeName = String(settings.storeName || '').trim();
     const storePhone = String(settings.storePhone || '').trim();
@@ -47,6 +47,12 @@ function registerHandlers() {
     store.setSetting('storeName', storeName);
     store.setSetting('storePhone', storePhone);
     return { storeName, storePhone };
+  });
+  ipcMain.handle('settings:save-discount', (_, value) => {
+    const defaultDiscountPercent = Number(value);
+    if (!Number.isFinite(defaultDiscountPercent) || defaultDiscountPercent < 0 || defaultDiscountPercent > 100) throw new Error('Default discount must be between 0% and 100%');
+    store.setSetting('defaultDiscountPercent', defaultDiscountPercent);
+    return defaultDiscountPercent;
   });
   ipcMain.handle('license:get', () => store.licenseStatus());
   ipcMain.handle('bill:print', async (_, id) => printBill(id));

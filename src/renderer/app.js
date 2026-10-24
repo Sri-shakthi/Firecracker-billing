@@ -2,7 +2,7 @@ const $ = selector => document.querySelector(selector);
 const receiptStyles = document.createElement('style');
 receiptStyles.textContent = Receipt.css;
 document.head.appendChild(receiptStyles);
-const state = { cart: [], bill: null, licenseActive: true };
+const state = { cart: [], bill: null, licenseActive: true, defaultDiscountPercent: 50 };
 let settingsProducts = [];
 const currency = value => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(value || 0);
 const dateString = date => date.toISOString().slice(0, 10);
@@ -21,6 +21,7 @@ function renderCart() {
   $('.cart-table').classList.toggle('hidden', state.cart.length === 0);
   $('#itemCount').textContent = result.itemCount;
   $('#subtotal').textContent = currency(result.subtotal);
+  $('#discountAmount').textContent = `− ${currency(result.discount)}`;
   $('#grandTotal').textContent = currency(result.total);
   $('#settleBtn').disabled = state.cart.length === 0 || !state.licenseActive;
 }
@@ -81,7 +82,15 @@ $('#cartBody').addEventListener('click', event => {
   renderCart(); $('#barcodeInput').focus();
 });
 $('#billDiscount').addEventListener('input', renderCart);
-$('#clearBtn').onclick = () => { state.cart = []; $('#billDiscount').value = 0; renderCart(); $('#barcodeInput').focus(); };
+function changeDiscount(amount) {
+  const current = Number($('#billDiscount').value) || 0;
+  $('#billDiscount').value = Math.min(100, Math.max(0, current + amount));
+  renderCart();
+}
+$('#discountMinus').onclick = () => changeDiscount(-1);
+$('#discountPlus').onclick = () => changeDiscount(1);
+$('#billDiscount').addEventListener('change', () => changeDiscount(0));
+$('#clearBtn').onclick = () => { state.cart = []; $('#billDiscount').value = state.defaultDiscountPercent; renderCart(); $('#barcodeInput').focus(); };
 
 async function settle() {
   if (!state.cart.length || $('#settleBtn').disabled) return;
@@ -90,7 +99,7 @@ async function settle() {
     const calculated = BillingMath.calculateBill(state.cart, $('#billDiscount').value);
     const paymentMethod = document.querySelector('[name=payment]:checked').value;
     const bill = await window.pos.saveBill({ ...calculated, paymentMethod });
-    state.cart = []; $('#billDiscount').value = 0; renderCart();
+    state.cart = []; $('#billDiscount').value = state.defaultDiscountPercent; renderCart();
     toast(`${bill.bill_number} saved. Printing…`);
     try {
       const printResult = await window.pos.printBill(bill.id);
@@ -119,6 +128,7 @@ async function loadSettings() {
     $('#printerStatus').textContent = settings.printerName ? `Current printer: ${settings.printerName}` : 'No printer selected';
     $('#storeName').value = settings.storeName || '';
     $('#storePhone').value = settings.storePhone || '';
+    $('#defaultDiscountPercent').value = settings.defaultDiscountPercent;
     $('#productsBody').querySelectorAll('[data-edit-product]').forEach(button => button.onclick = () => openProduct(settingsProducts[Number(button.dataset.editProduct)]));
     $('#productsBody').querySelectorAll('[data-archive-product]').forEach(button => button.onclick = async () => { await window.pos.archiveProduct(Number(button.dataset.archiveProduct)); toast('Product disabled'); loadSettings(); });
   } catch (error) { toast(error.message, true); }
@@ -144,6 +154,7 @@ $('#productForm').onsubmit = async event => {
 $('#productSearch').addEventListener('input', () => { clearTimeout(loadSettings.timer); loadSettings.timer = setTimeout(loadSettings, 220); });
 $('#settingsSavePrinter').onclick = async () => { await window.pos.savePrinter($('#settingsPrinterSelect').value); toast('Receipt printer saved'); loadSettings(); };
 $('#saveStoreSettings').onclick = async () => { try { await window.pos.saveStoreSettings({ storeName: $('#storeName').value, storePhone: $('#storePhone').value }); toast('Store details saved'); } catch (error) { toast(error.message, true); } };
+$('#saveDefaultDiscount').onclick = async () => { try { const value = await window.pos.saveDefaultDiscount($('#defaultDiscountPercent').value); state.defaultDiscountPercent = value; if (!state.cart.length) $('#billDiscount').value = value; renderCart(); toast(`Default discount saved at ${value}%`); } catch (error) { toast(error.message, true); } };
 
 async function loadDashboard() {
   const filters = { from: $('#fromDate').value, to: $('#toDate').value };
@@ -177,4 +188,14 @@ async function loadLicense() {
   renderCart();
 }
 
-renderCart(); loadLicense(); $('#barcodeInput').focus();
+async function initialize() {
+  try {
+    const settings = await window.pos.getSettings();
+    state.defaultDiscountPercent = settings.defaultDiscountPercent;
+    $('#billDiscount').value = state.defaultDiscountPercent;
+  } catch (error) { toast(error.message, true); }
+  renderCart();
+  loadLicense();
+  $('#barcodeInput').focus();
+}
+initialize();
