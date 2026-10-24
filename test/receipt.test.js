@@ -15,4 +15,5 @@ test('printed and preview receipts include store, item columns and totals', () =
   assert.ok(html.indexOf('Flower Pots Big') < html.indexOf('Qty'));
   assert.match(Receipt.css, /font-family: Poppins/);
   assert.match(Receipt.css, /max-width: 64mm/);
+  assert.match(Receipt.css, /grid-template-columns: 16% 34% 50%/);
 });

@@ -24,8 +24,8 @@
         <div class="receipt-item-data">
           <span>Qty <b>${escapeHtml(item.quantity)}</b></span>
           <span>Rate <b>Rs. ${money(item.unit_price)}</b></span>
+          <span>Amount <b>Rs. ${money(item.total)}</b></span>
         </div>
-        <div class="receipt-item-amount"><span>Amount</span><b>Rs. ${money(item.total)}</b></div>
       </section>`).join('');
 
     return `<article class="thermal-receipt">
@@ -65,10 +65,9 @@
     .receipt-section-title { padding: 1px 0 4px; border-bottom: 1px solid #000; font-size: 11px; font-weight: 700; letter-spacing: .08em; }
     .receipt-item { padding: 6px 0; border-bottom: 1px dotted #777; page-break-inside: avoid; break-inside: avoid; }
     .receipt-item-name { padding-bottom: 4px; font-size: 13px; font-weight: 700; overflow-wrap: anywhere; }
-    .receipt-item-data { display: flex; gap: 14px; width: 100%; font-size: 11.5px; font-variant-numeric: tabular-nums; }
-    .receipt-item-data span { white-space: nowrap; }
-    .receipt-item-amount { display: flex; justify-content: space-between; width: 100%; margin-top: 3px; padding-top: 3px; border-top: 1px dotted #aaa; font-size: 12px; font-variant-numeric: tabular-nums; }
-    .receipt-item-amount b { text-align: left; margin-right: 5mm; }
+    .receipt-item-data { display: grid; grid-template-columns: 16% 34% 50%; width: calc(100% - 4mm); font-size: 10.5px; font-variant-numeric: tabular-nums; }
+    .receipt-item-data span { min-width: 0; white-space: nowrap; }
+    .receipt-item-data span:nth-child(2), .receipt-item-data span:nth-child(3) { text-align: right; }
     .receipt-total { border-top: 1px solid #000; margin-top: 5px !important; padding-top: 5px; font-size: 17px; font-weight: 700; }
     .receipt-summary p b { margin-right: 5mm; }
     .thermal-receipt footer { padding: 2px 0 4px; text-align: center; font-size: 12px; font-weight: 600; }
