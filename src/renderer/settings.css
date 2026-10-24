@@ -66,13 +66,4 @@ main { margin-left: 238px; }
 input, select, button { font-family: Poppins, "Segoe UI", Arial, sans-serif; }
 @media (max-width: 1100px) { .sidebar { width: 218px; } main { margin-left: 218px; } }
 #receiptDialog { width: 440px; background: #e9ebef; padding: 28px; }
-.receipt-paper { width: 302px; margin: 0 auto; background: white; color: #111; padding: 18px 14px 24px; box-shadow: 0 7px 25px rgba(0,0,0,.16); font-family: "Courier New", monospace; font-size: 11px; }
-.receipt-paper h2 { font: 700 17px Poppins, sans-serif; text-align: center; margin: 0 0 3px; }
-.receipt-paper .receipt-center { text-align: center; }
-.receipt-paper p { margin: 2px 0; }
-.receipt-rule { border-top: 1px dashed #111; margin: 8px 0; }
-.receipt-paper table { width: 100%; border-collapse: collapse; }
-.receipt-paper th, .receipt-paper td { padding: 3px 1px; text-align: right; vertical-align: top; }
-.receipt-paper th:first-child, .receipt-paper td:first-child { text-align: left; }
-.receipt-paper small { display: block; color: #555; }
-.receipt-total { font-size: 15px; font-weight: 700; }
+.receipt-paper { width: 302px; margin: 0 auto; background: white; color: #111; padding: 14px 11px 20px; box-shadow: 0 7px 25px rgba(0,0,0,.16); }

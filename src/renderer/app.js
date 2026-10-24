@@ -1,4 +1,7 @@
 const $ = selector => document.querySelector(selector);
+const receiptStyles = document.createElement('style');
+receiptStyles.textContent = Receipt.css;
+document.head.appendChild(receiptStyles);
 const state = { cart: [], bill: null, licenseActive: true };
 let settingsProducts = [];
 const currency = value => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(value || 0);
@@ -40,8 +43,7 @@ function renderSalesChart(rows) {
 }
 
 function receiptMarkup(bill, settings = {}) {
-  const rows = bill.items.map(item => `<tr><td>${escapeHtml(item.name)}<small>${escapeHtml(item.barcode)}</small></td><td>${item.quantity}</td><td>${Number(item.unit_price).toFixed(2)}</td><td>${Number(item.total).toFixed(2)}</td></tr>`).join('');
-  return `<div class="receipt-center"><h2>${escapeHtml(settings.storeName || 'FIRECRACKER STORE')}</h2>${settings.storePhone ? `<p>${escapeHtml(settings.storePhone)}</p>` : ''}</div><div class="receipt-rule"></div><p>Bill: <b>${escapeHtml(bill.bill_number)}</b></p><p>Date: ${new Date(bill.created_at.replace(' ', 'T') + 'Z').toLocaleString('en-IN')}</p><p>Payment: ${escapeHtml(bill.payment_method.toUpperCase())}</p><div class="receipt-rule"></div><table><thead><tr><th>Item</th><th>Qty</th><th>Rate</th><th>Amount</th></tr></thead><tbody>${rows}</tbody></table><div class="receipt-rule"></div><table><tr><td>Subtotal</td><td>${currency(bill.subtotal)}</td></tr>${bill.discount ? `<tr><td>Discount</td><td>-${currency(bill.discount)}</td></tr>` : ''}<tr class="receipt-total"><td>TOTAL</td><td>${currency(bill.total)}</td></tr></table><div class="receipt-rule"></div><p class="receipt-center">Thank you. Visit again!</p>`;
+  return Receipt.markup(bill, settings);
 }
 
 async function showReceiptPreview(id) {
