@@ -81,7 +81,10 @@ $('#cartBody').addEventListener('click', event => {
     if (item.stock != null && item.quantity >= Number(item.stock)) return toast(`${item.name} has only ${item.stock} left in stock`, true);
     item.quantity++;
   }
-  if (button.dataset.action === 'minus') item.quantity = Math.max(1, item.quantity - 1);
+  if (button.dataset.action === 'minus') {
+    if (item.quantity <= 1) state.cart.splice(index, 1);
+    else item.quantity--;
+  }
   if (button.dataset.action === 'remove') state.cart.splice(index, 1);
   renderCart(); $('#barcodeInput').focus();
 });
