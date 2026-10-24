@@ -60,10 +60,14 @@ async function printBill(id) {
   const receipt = new BrowserWindow({ show: false, webPreferences: { contextIsolation: true, sandbox: true } });
   const receiptPath = path.join(app.getPath('temp'), `firecracker-receipt-${id}.html`);
   const settings = Object.fromEntries(['storeName','storePhone'].map(k => [k, store.getSetting(k) || '']));
+  const embeddedFont = weight => fs.readFileSync(require.resolve(`@fontsource/poppins/files/poppins-latin-${weight}-normal.woff2`)).toString('base64');
   const html = `<!doctype html><html><head><meta charset="utf-8"><style>
     @page { size: 80mm auto; margin: 0; }
     html, body { width: 80mm; margin: 0; padding: 0; background: #fff; }
     body { padding: 3mm 4mm; }
+    @font-face { font-family: Poppins; src: url(data:font/woff2;base64,${embeddedFont(400)}) format('woff2'); font-weight: 400; }
+    @font-face { font-family: Poppins; src: url(data:font/woff2;base64,${embeddedFont(600)}) format('woff2'); font-weight: 600; }
+    @font-face { font-family: Poppins; src: url(data:font/woff2;base64,${embeddedFont(700)}) format('woff2'); font-weight: 700; }
     ${Receipt.css}
     @media print { html, body { width: 80mm; } }
     </style></head><body>${Receipt.markup(bill, settings)}</body></html>`;

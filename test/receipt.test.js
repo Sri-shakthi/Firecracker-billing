@@ -12,5 +12,7 @@ test('printed and preview receipts include store, item columns and totals', () =
   for (const text of ['Nila Crackers', '9876543210', 'Qty', 'Rate', 'Amount', 'Flower Pots Big', '60.00', '120.00', 'Subtotal', 'TOTAL', '110.00']) {
     assert.match(html, new RegExp(text));
   }
-  assert.match(Receipt.css, /grid-template-columns/);
+  assert.ok(html.indexOf('Flower Pots Big') < html.indexOf('Qty'));
+  assert.match(Receipt.css, /font-family: Poppins/);
+  assert.match(Receipt.css, /max-width: 64mm/);
 });
