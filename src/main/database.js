@@ -56,6 +56,14 @@ function openDatabase(file) {
 
   const nextBillNumber = (id) => `FC-${new Date().getFullYear()}-${String(id).padStart(6, '0')}`;
   const saveBill = db.transaction((bill) => {
+    const getStock = db.prepare('SELECT name, stock FROM products WHERE id = ?');
+    for (const item of bill.lines) {
+      if (!item.id) continue;
+      const product = getStock.get(item.id);
+      if (product?.stock !== null && product?.stock !== undefined && Number(item.quantity) > Number(product.stock)) {
+        throw new Error(`${product.name} has only ${product.stock} left in stock`);
+      }
+    }
     const result = db.prepare(`INSERT INTO bills (bill_number, subtotal, tax, discount, discount_percent, total, payment_method)
       VALUES (NULL, ?, ?, ?, ?, ?, ?)`).run(bill.subtotal, bill.tax, bill.discount, bill.discountPercent, bill.total, bill.paymentMethod);
     const id = Number(result.lastInsertRowid);

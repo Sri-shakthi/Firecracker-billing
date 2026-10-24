@@ -16,7 +16,7 @@ function toast(message, error = false) {
 function renderCart() {
   const result = BillingMath.calculateBill(state.cart, $('#billDiscount').value);
   state.bill = result;
-  $('#cartBody').innerHTML = result.lines.map((item, index) => `<tr><td class="item-name"><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.barcode)}</small></td><td>${currency(item.unitPrice)}</td><td><div class="qty"><button data-action="minus" data-index="${index}">−</button><b>${item.quantity}</b><button data-action="plus" data-index="${index}">+</button></div></td><td><b>${currency(item.total)}</b></td><td><button class="remove" data-action="remove" data-index="${index}">×</button></td></tr>`).join('');
+  $('#cartBody').innerHTML = result.lines.map((item, index) => `<tr><td class="item-name"><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.barcode)}${item.stock == null ? '' : ` · Stock: ${item.stock}`}</small></td><td>${currency(item.unitPrice)}</td><td><div class="qty"><button data-action="minus" data-index="${index}">−</button><b>${item.quantity}</b><button data-action="plus" data-index="${index}">+</button></div></td><td><b>${currency(item.total)}</b></td><td><button class="remove" data-action="remove" data-index="${index}">×</button></td></tr>`).join('');
   $('#emptyCart').classList.toggle('hidden', state.cart.length > 0);
   $('.cart-table').classList.toggle('hidden', state.cart.length === 0);
   $('#itemCount').textContent = result.itemCount;
@@ -55,8 +55,9 @@ async function showReceiptPreview(id) {
 }
 function addProduct(product) {
   const found = state.cart.find(item => item.barcode === product.barcode);
+  if (product.stock != null && (found?.quantity || 0) >= Number(product.stock)) return toast(`${product.name} has only ${product.stock} left in stock`, true);
   if (found) found.quantity += 1;
-  else state.cart.push({ id: product.id, barcode: product.barcode, name: product.name, unitPrice: product.price, discount: 0, quantity: 1 });
+  else state.cart.push({ id: product.id, barcode: product.barcode, name: product.name, unitPrice: product.price, stock: product.stock, discount: 0, quantity: 1 });
   renderCart(); $('#barcodeInput').value = ''; $('#searchResults').classList.add('hidden'); $('#barcodeInput').focus();
 }
 
@@ -66,7 +67,7 @@ async function scanOrSearch(value, force = false) {
   if (exact) return addProduct(exact);
   const results = await window.pos.searchProducts(value);
   if (force && results.length === 1) return addProduct(results[0]);
-  $('#searchResults').innerHTML = results.length ? results.map((p, i) => `<button data-product="${i}"><span><b>${escapeHtml(p.name)}</b><small> &nbsp; ${escapeHtml(p.barcode)}</small></span><b>${currency(p.price)}</b></button>`).join('') : '<button disabled>No matching product</button>';
+  $('#searchResults').innerHTML = results.length ? results.map((p, i) => `<button data-product="${i}" ${p.stock != null && Number(p.stock) <= 0 ? 'disabled' : ''}><span><b>${escapeHtml(p.name)}</b><small> &nbsp; ${escapeHtml(p.barcode)}${p.stock == null ? '' : ` · Stock: ${p.stock}`}</small></span><b>${p.stock != null && Number(p.stock) <= 0 ? 'Out of stock' : currency(p.price)}</b></button>`).join('') : '<button disabled>No matching product</button>';
   $('#searchResults').classList.remove('hidden');
   $('#searchResults').querySelectorAll('[data-product]').forEach(btn => btn.onclick = () => addProduct(results[Number(btn.dataset.product)]));
 }
@@ -76,7 +77,10 @@ $('#barcodeInput').addEventListener('keydown', event => { if (event.key === 'Ent
 $('#cartBody').addEventListener('click', event => {
   const button = event.target.closest('button'); if (!button) return;
   const index = Number(button.dataset.index); const item = state.cart[index];
-  if (button.dataset.action === 'plus') item.quantity++;
+  if (button.dataset.action === 'plus') {
+    if (item.stock != null && item.quantity >= Number(item.stock)) return toast(`${item.name} has only ${item.stock} left in stock`, true);
+    item.quantity++;
+  }
   if (button.dataset.action === 'minus') item.quantity = Math.max(1, item.quantity - 1);
   if (button.dataset.action === 'remove') state.cart.splice(index, 1);
   renderCart(); $('#barcodeInput').focus();
