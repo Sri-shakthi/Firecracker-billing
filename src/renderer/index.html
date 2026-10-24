@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Firecracker Billing</title>
+  <link rel="stylesheet" href="../../node_modules/@fontsource/poppins/400.css">
+  <link rel="stylesheet" href="../../node_modules/@fontsource/poppins/500.css">
+  <link rel="stylesheet" href="../../node_modules/@fontsource/poppins/600.css">
+  <link rel="stylesheet" href="../../node_modules/@fontsource/poppins/700.css">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="settings.css">
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand"><span class="brand-mark">🧨</span><div><strong>Firecracker</strong><small>Billing</small></div></div>
+    <nav>
+      <button class="nav active" data-view="billing"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2h12v20l-3-2-3 2-3-2-3 2V2Zm3 5h6M9 11h6M9 15h4"/></svg><span>Billing</span></button>
+      <button class="nav" data-view="dashboard"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Dashboard</span></button>
+      <button class="nav" data-view="settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="m19.4 15 .1.1 1.4 2.4-2.8 2.8-2.4-1.4-.2.1a8 8 0 0 1-2 .8H13L12 22l-1-2.2h-.2a8 8 0 0 1-2-.8l-.2-.1-2.4 1.4-2.8-2.8 1.4-2.4-.1-.2a8 8 0 0 1-.8-2v-.2L2 12l1.9-1v-.2a8 8 0 0 1 .8-2l.1-.2-1.4-2.4 2.8-2.8 2.4 1.4.2-.1a8 8 0 0 1 2-.8h.2L12 2l1 1.9h.2a8 8 0 0 1 2 .8l.2.1 2.4-1.4 2.8 2.8-1.4 2.4.1.2a8 8 0 0 1 .8 2v.2L22 12l-1.9 1v.2a8 8 0 0 1-.7 1.8Z"/></svg><span>Settings</span></button>
+    </nav>
+    <div class="sidebar-bottom"><div id="licenseStatus" class="license-status"></div><div class="offline"><i></i> Local database</div></div>
+  </aside>
+
+  <main>
+    <section id="billingView" class="view active">
+      <header><div><p class="eyebrow">NEW SALE</p><h1>Billing counter</h1></div><div class="header-meta"><span id="clock"></span><span class="shortcut">F2&nbsp;&nbsp; Settle</span></div></header>
+      <div class="billing-grid">
+        <div class="sale-panel">
+          <div class="scan-wrap"><span class="scan-icon">⌁</span><input id="barcodeInput" autocomplete="off" placeholder="Scan barcode or type product name…"><kbd>ENTER</kbd></div>
+          <div id="searchResults" class="search-results hidden"></div>
+          <div class="table-wrap"><table class="cart-table"><thead><tr><th>Item</th><th>Price</th><th>Qty</th><th>Amount</th><th></th></tr></thead><tbody id="cartBody"></tbody></table><div id="emptyCart" class="empty"><div class="empty-icon">▦</div><h2>Ready to scan</h2><p>Scan a product barcode to begin this bill.</p></div></div>
+        </div>
+        <aside class="summary">
+          <p class="eyebrow">CURRENT BILL</p><div class="bill-stat"><span>Items</span><b id="itemCount">0</b></div><div class="divider"></div>
+          <div class="amount-row"><span>Subtotal</span><b id="subtotal">₹0.00</b></div>
+          <label class="discount-label"><span>Bill discount</span><div><span>₹</span><input id="billDiscount" type="number" min="0" step="0.01" value="0"></div></label>
+          <div class="grand-total"><span>Total</span><strong id="grandTotal">₹0.00</strong></div>
+          <fieldset><legend>Payment</legend><div class="payments"><label><input type="radio" name="payment" value="cash" checked><span>Cash</span></label><label><input type="radio" name="payment" value="upi"><span>UPI</span></label><label><input type="radio" name="payment" value="card"><span>Card</span></label></div></fieldset>
+          <button id="settleBtn" class="settle"><span>Settle & print</span><kbd>F2</kbd></button><button id="clearBtn" class="clear">Clear bill</button>
+        </aside>
+      </div>
+    </section>
+
+    <section id="dashboardView" class="view">
+      <header><div><p class="eyebrow">OVERVIEW</p><h1>Sales dashboard</h1></div><div class="filters"><input id="fromDate" type="date"><span>to</span><input id="toDate" type="date"><button id="refreshDashboard">Apply</button></div></header>
+      <div class="metric-grid"><article><span>Net sales</span><strong id="metricSales">₹0</strong></article><article><span>Bills</span><strong id="metricBills">0</strong></article><article><span>Average bill</span><strong id="metricAverage">₹0</strong></article><article><span>Cash sales</span><strong id="metricCash">₹0</strong></article></div>
+      <div class="dashboard-grid"><article class="card"><div class="card-head"><h2>Sales trend</h2></div><div id="salesChart" class="chart"></div></article><article class="card"><div class="card-head"><h2>Payment split</h2></div><div id="paymentList" class="payment-list"></div></article></div>
+      <div class="dashboard-grid lower"><article class="card"><div class="card-head"><h2>Recent bills</h2><input id="billSearch" placeholder="Search bill number"></div><div class="bill-list" id="billList"></div></article><article class="card"><div class="card-head"><h2>Top products</h2></div><div id="topProducts" class="top-products"></div></article></div>
+    </section>
+    <section id="settingsView" class="view">
+      <header><div><p class="eyebrow">LOCAL SETUP</p><h1>Settings</h1></div></header>
+      <div class="settings-grid">
+        <article class="card settings-products"><div class="card-head"><div><h2>Products</h2><p>Add missing products or update barcode, price, tax and stock.</p></div><button id="newProductBtn" class="primary action-btn">+ Add product</button></div><input id="productSearch" class="wide-search" placeholder="Search by product name or barcode"><div class="products-table-wrap"><table class="products-table"><thead><tr><th>Product</th><th>Barcode</th><th>Price</th><th>Stock</th><th>Status</th><th></th></tr></thead><tbody id="productsBody"></tbody></table></div></article>
+        <div class="settings-side"><article class="card store-card"><div class="card-head"><div><h2>Store details</h2><p>These details appear at the top of every receipt.</p></div></div><label>Store name<input id="storeName" placeholder="Firecracker Store"></label><label>Phone number<input id="storePhone" inputmode="tel" placeholder="98765 43210"></label><button id="saveStoreSettings" class="primary action-btn">Save store details</button></article><article class="card printer-card"><div class="card-head"><div><h2>Receipt printer</h2><p>Select the installed 80 mm thermal printer.</p></div></div><label>Printer<select id="settingsPrinterSelect"></select></label><p id="printerStatus" class="setting-note">No printer selected</p><button id="settingsSavePrinter" class="primary action-btn">Save printer</button></article></div>
+      </div>
+    </section>
+  </main>
+  <div id="toast" class="toast"></div>
+  <dialog id="productDialog"><form id="productForm"><h2 id="productDialogTitle">Add product</h2><input id="productId" type="hidden"><div class="form-grid"><label class="span-2">Item name<input id="productName" required></label><label>Barcode value<input id="productBarcode" required></label><label>Category<input id="productCategory"></label><label>Unit / pack<input id="productUnit" placeholder="1 Box"></label><label>Selling price<input id="productPrice" type="number" min="0" step="0.01" required></label><label>MRP<input id="productMrp" type="number" min="0" step="0.01"></label><label>Stock quantity<input id="productStock" type="number" min="0" step="1"></label><label class="checkbox-label"><input id="productActive" type="checkbox" checked> Product is active</label></div><div class="dialog-actions"><button type="button" id="cancelProduct">Cancel</button><button type="submit" class="primary">Save product</button></div></form></dialog>
+  <dialog id="receiptDialog"><div class="receipt-preview"><div class="receipt-paper" id="receiptPaper"></div><div class="dialog-actions"><button type="button" id="closeReceipt">Close</button><button type="button" id="printReceipt" class="primary">Print receipt</button></div></div></dialog>
+  <script src="../shared/billing.js"></script><script src="../shared/scanner.js"></script><script src="app.js"></script>
+</body>
+</html>
