@@ -16,5 +16,6 @@ contextBridge.exposeInMainWorld('pos', {
   getSettings: () => ipcRenderer.invoke('settings:get'),
   saveStoreSettings: settings => ipcRenderer.invoke('settings:save-store', settings),
   saveDefaultDiscount: value => ipcRenderer.invoke('settings:save-discount', value),
+  saveLowStockThreshold: value => ipcRenderer.invoke('settings:save-stock-threshold', value),
   getLicense: () => ipcRenderer.invoke('license:get')
 });

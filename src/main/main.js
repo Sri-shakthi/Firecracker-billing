@@ -39,7 +39,7 @@ function registerHandlers() {
   ipcMain.handle('dashboard:get', (_, filters) => store.dashboard(filters));
   ipcMain.handle('printer:list', async () => mainWindow.webContents.getPrintersAsync());
   ipcMain.handle('printer:save', (_, name) => store.setSetting('printerName', name));
-  ipcMain.handle('settings:get', () => ({ printerName: store.getSetting('printerName') || '', storeName: store.getSetting('storeName') || '', storePhone: store.getSetting('storePhone') || '', defaultDiscountPercent: Number(store.getSetting('defaultDiscountPercent') ?? 50) }));
+  ipcMain.handle('settings:get', () => ({ printerName: store.getSetting('printerName') || '', storeName: store.getSetting('storeName') || '', storePhone: store.getSetting('storePhone') || '', defaultDiscountPercent: Number(store.getSetting('defaultDiscountPercent') ?? 50), lowStockThreshold: Number(store.getSetting('lowStockThreshold') ?? 10) }));
   ipcMain.handle('settings:save-store', (_, settings) => {
     const storeName = String(settings.storeName || '').trim();
     const storePhone = String(settings.storePhone || '').trim();
@@ -53,6 +53,12 @@ function registerHandlers() {
     if (!Number.isFinite(defaultDiscountPercent) || defaultDiscountPercent < 0 || defaultDiscountPercent > 100) throw new Error('Default discount must be between 0% and 100%');
     store.setSetting('defaultDiscountPercent', defaultDiscountPercent);
     return defaultDiscountPercent;
+  });
+  ipcMain.handle('settings:save-stock-threshold', (_, value) => {
+    const lowStockThreshold = Number(value);
+    if (!Number.isInteger(lowStockThreshold) || lowStockThreshold < 0) throw new Error('Low-stock warning must be a whole number of zero or greater');
+    store.setSetting('lowStockThreshold', lowStockThreshold);
+    return lowStockThreshold;
   });
   ipcMain.handle('license:get', () => store.licenseStatus());
   ipcMain.handle('bill:print', async (_, id) => printBill(id));

@@ -2,7 +2,7 @@ const $ = selector => document.querySelector(selector);
 const receiptStyles = document.createElement('style');
 receiptStyles.textContent = Receipt.css;
 document.head.appendChild(receiptStyles);
-const state = { cart: [], bill: null, licenseActive: true, defaultDiscountPercent: 50 };
+const state = { cart: [], bill: null, licenseActive: true, defaultDiscountPercent: 50, lowStockThreshold: 10 };
 let settingsProducts = [];
 const currency = value => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(value || 0);
 const dateString = date => date.toISOString().slice(0, 10);
@@ -27,6 +27,20 @@ function renderCart() {
 }
 
 function escapeHtml(value) { const div = document.createElement('div'); div.textContent = value; return div.innerHTML; }
+async function refreshStockAlert() {
+  const alert = $('#stockAlert');
+  try {
+    const products = await window.pos.listProducts('');
+    const lowStock = products.filter(product => product.active && product.stock != null && Number(product.stock) <= state.lowStockThreshold);
+    alert.classList.toggle('hidden', lowStock.length === 0);
+    if (!lowStock.length) return;
+    const outCount = lowStock.filter(product => Number(product.stock) <= 0).length;
+    const names = lowStock.slice(0, 3).map(product => `${escapeHtml(product.name)} (${product.stock})`).join(', ');
+    alert.innerHTML = `<strong>⚠ ${lowStock.length} stock alert${lowStock.length === 1 ? '' : 's'}</strong><span>${outCount ? `${outCount} out of stock. ` : ''}${names}${lowStock.length > 3 ? ` +${lowStock.length - 3} more` : ''}</span>`;
+  } catch (error) {
+    alert.classList.add('hidden');
+  }
+}
 function renderSalesChart(rows) {
   if (!rows.length) return '<div class="chart-empty"><b>No sales yet</b><span>Completed bills will appear here.</span></div>';
   const data = rows.slice(-14);
@@ -107,6 +121,7 @@ async function settle() {
     const paymentMethod = document.querySelector('[name=payment]:checked').value;
     const bill = await window.pos.saveBill({ ...calculated, paymentMethod });
     state.cart = []; $('#billDiscount').value = state.defaultDiscountPercent; renderCart();
+    await refreshStockAlert();
     toast(`${bill.bill_number} saved. Printing…`);
     try {
       const printResult = await window.pos.printBill(bill.id);
@@ -130,12 +145,13 @@ async function loadSettings() {
   try {
     const [products, printers, settings] = await Promise.all([window.pos.listProducts($('#productSearch').value), window.pos.getPrinters(), window.pos.getSettings()]);
     settingsProducts = products;
-    $('#productsBody').innerHTML = products.map((product, index) => `<tr><td><b>${escapeHtml(product.name)}</b><br><small>${escapeHtml(product.unit || product.category || '')}</small></td><td>${escapeHtml(product.barcode)}</td><td>${currency(product.price)}</td><td>${product.stock ?? 'Not tracked'}</td><td><span class="status ${product.active ? '' : 'inactive'}">${product.active ? 'Active' : 'Inactive'}</span></td><td><button data-edit-product="${index}">Edit</button>${product.active ? `<button data-archive-product="${product.id}">Disable</button>` : ''}</td></tr>`).join('');
+    $('#productsBody').innerHTML = products.map((product, index) => { const stockClass = product.stock == null ? '' : Number(product.stock) <= 0 ? 'out' : Number(product.stock) <= settings.lowStockThreshold ? 'low' : ''; return `<tr><td><b>${escapeHtml(product.name)}</b><br><small>${escapeHtml(product.unit || product.category || '')}</small></td><td>${escapeHtml(product.barcode)}</td><td>${currency(product.price)}</td><td><span class="stock-level ${stockClass}">${product.stock ?? 'Not tracked'}${stockClass === 'out' ? ' · Out' : stockClass === 'low' ? ' · Low' : ''}</span></td><td><span class="status ${product.active ? '' : 'inactive'}">${product.active ? 'Active' : 'Inactive'}</span></td><td><button data-edit-product="${index}">Edit</button>${product.active ? `<button data-archive-product="${product.id}">Disable</button>` : ''}</td></tr>`; }).join('');
     $('#settingsPrinterSelect').innerHTML = `<option value="">Select a printer</option>${printers.map(p => `<option value="${escapeHtml(p.name)}" ${p.name === settings.printerName ? 'selected' : ''}>${escapeHtml(p.displayName || p.name)}</option>`).join('')}`;
     $('#printerStatus').textContent = settings.printerName ? `Current printer: ${settings.printerName}` : 'No printer selected';
     $('#storeName').value = settings.storeName || '';
     $('#storePhone').value = settings.storePhone || '';
     $('#defaultDiscountPercent').value = settings.defaultDiscountPercent;
+    $('#lowStockThreshold').value = settings.lowStockThreshold;
     $('#productsBody').querySelectorAll('[data-edit-product]').forEach(button => button.onclick = () => openProduct(settingsProducts[Number(button.dataset.editProduct)]));
     $('#productsBody').querySelectorAll('[data-archive-product]').forEach(button => button.onclick = async () => { await window.pos.archiveProduct(Number(button.dataset.archiveProduct)); toast('Product disabled'); loadSettings(); });
   } catch (error) { toast(error.message, true); }
@@ -162,6 +178,7 @@ $('#productSearch').addEventListener('input', () => { clearTimeout(loadSettings.
 $('#settingsSavePrinter').onclick = async () => { await window.pos.savePrinter($('#settingsPrinterSelect').value); toast('Receipt printer saved'); loadSettings(); };
 $('#saveStoreSettings').onclick = async () => { try { await window.pos.saveStoreSettings({ storeName: $('#storeName').value, storePhone: $('#storePhone').value }); toast('Store details saved'); } catch (error) { toast(error.message, true); } };
 $('#saveDefaultDiscount').onclick = async () => { try { const value = await window.pos.saveDefaultDiscount($('#defaultDiscountPercent').value); state.defaultDiscountPercent = value; if (!state.cart.length) $('#billDiscount').value = value; renderCart(); toast(`Default discount saved at ${value}%`); } catch (error) { toast(error.message, true); } };
+$('#saveLowStockThreshold').onclick = async () => { try { const value = await window.pos.saveLowStockThreshold($('#lowStockThreshold').value); state.lowStockThreshold = value; await refreshStockAlert(); await loadSettings(); toast(`Low-stock warning saved at ${value}`); } catch (error) { toast(error.message, true); } };
 
 async function loadDashboard() {
   const filters = { from: $('#fromDate').value, to: $('#toDate').value };
@@ -199,9 +216,11 @@ async function initialize() {
   try {
     const settings = await window.pos.getSettings();
     state.defaultDiscountPercent = settings.defaultDiscountPercent;
+    state.lowStockThreshold = settings.lowStockThreshold;
     $('#billDiscount').value = state.defaultDiscountPercent;
   } catch (error) { toast(error.message, true); }
   renderCart();
+  await refreshStockAlert();
   loadLicense();
   $('#barcodeInput').focus();
 }
